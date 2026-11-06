@@ -1,0 +1,585 @@
+{
+ "schema_version": 1,
+ "date": "2026-11-06",
+ "title": "Faster-FermiNet final formal check (round 8)",
+ "base": {
+  "repository": "https://github.com/google-deepmind/ferminet",
+  "commit": "e9d5a604d15c617864e7caefd948d87453b01ae6"
+ },
+ "hardware": {
+  "gpu": "NVIDIA H20 (Hopper, compute capability 9.0)",
+  "memory": "97871 MiB HBM3 (96 GB class)",
+  "power_limit_w": 500,
+  "driver": "535.261.03",
+  "gpus_per_run": 1,
+  "parallelism": "four independent single-GPU runs (Fe, Kr, Cd, Xe), one per GPU"
+ },
+ "software": {
+  "python": "3.11.2",
+  "jax": "0.7.2",
+  "jaxlib": "0.7.2",
+  "jax-cuda12-plugin": "0.7.2",
+  "cublas": "nvidia-cublas-cu12 12.9.1.4",
+  "cudnn": "nvidia-cudnn-cu12 9.24.0.43",
+  "cusolver": "nvidia-cusolver-cu12 11.7.5.82",
+  "kfac-jax": "0.0.8",
+  "optax": "0.2.6",
+  "pyscf": "2.12.1",
+  "numpy": "2.4.6",
+  "folx": "0.2.31",
+  "ml-collections": "1.1.0"
+ },
+ "workload": {
+  "config": "ferminet/configs/atom.py (upstream defaults)",
+  "batch_size": 1024,
+  "optimizer": "KFAC (upstream hyper-parameters)",
+  "mcmc_steps_per_iteration": 10,
+  "network": "FermiNet, hidden (256,32)x4, 16 full determinants, laplacian=default",
+  "pretrain_basis": "ano-rcc",
+  "seed": "debug.deterministic=True (seed 23)",
+  "spin_polarisation": {
+   "Fe": 4,
+   "Kr": 0,
+   "Cd": 0,
+   "Xe": 0
+  },
+  "precision": "upstream (float32 params; XLA default dot precision)",
+  "bench_only": {
+   "pretrain.iterations": 20,
+   "mcmc.burn_in": 10,
+   "note": "one-off phases shortened; the timed training step is unchanged"
+  }
+ },
+ "protocol": {
+  "timing": "default XLA flags; reference A -> candidate -> reference B as independent processes on the same GPU; 18 iterations: step 0 (compile) and 2 warm-up steps excluded, 3 windows x 5 steps, median window; speedup = mean(A,B)/candidate; pass if > max(1.02, 1+2|A-B|/mean) and window range < 10%",
+  "bitwise": "XLA_FLAGS=--xla_gpu_deterministic_ops=true for both trees; every step: energy bits, pmove, sha256 of every leaf of walkers, parameters, KFAC optimizer state, MCMC width",
+  "bitwise_lengths": {
+   "short": 8,
+   "long": 110
+  }
+ },
+ "rows": {
+  "Fe": {
+   "electrons": [
+    15,
+    11
+   ],
+   "refA": 0.5388977207243443,
+   "refB": 0.5377307869493961,
+   "ref_step_s": 0.5383142538368701,
+   "cand_step_s": 0.431945077329874,
+   "speedup": 1.2462562536064339,
+   "threshold": 1.02,
+   "ref_gap": 0.002167755668052156,
+   "max_window_range": 0.0015219659599403545,
+   "benefit": "PASS",
+   "bitwise_8step": "PASS",
+   "bitwise_long": "PASS",
+   "verdict": "PASS",
+   "windows_s": {
+    "refA": [
+     0.5383946418762207,
+     0.5388977207243443,
+     0.5390401840209961
+    ],
+    "cand": [
+     0.431945077329874,
+     0.43189566731452944,
+     0.4325530730187893
+    ],
+    "refB": [
+     0.5377869144082069,
+     0.5376478023827076,
+     0.5377307869493961
+    ]
+   },
+   "step_s": {
+    "refA": [
+     0.6987525932490826,
+     0.5387505553662777,
+     0.5384500101208687,
+     0.5384150892496109,
+     0.5384145267307758,
+     0.538378618657589,
+     0.5383149646222591,
+     0.5383209623396397,
+     0.53826804459095,
+     0.5381093882024288,
+     0.5383967496454716,
+     0.5413934588432312,
+     0.5412553586065769,
+     0.5385683514177799,
+     0.5383944325149059,
+     0.5385988540947437,
+     0.538383923470974
+    ],
+    "cand": [
+     0.5992155522108078,
+     0.4316268861293793,
+     0.43151508271694183,
+     0.4326097071170807,
+     0.43167391046881676,
+     0.43143055960536003,
+     0.4324961267411709,
+     0.43218834325671196,
+     0.4310281351208687,
+     0.4325767643749714,
+     0.43165896087884903,
+     0.43202613294124603,
+     0.43250730633735657,
+     0.433347936719656,
+     0.4325363375246525,
+     0.4317370764911175,
+     0.43263670802116394
+    ],
+    "refB": [
+     0.6936548687517643,
+     0.5377806015312672,
+     0.537911880761385,
+     0.5376815125346184,
+     0.5376675799489021,
+     0.5378515273332596,
+     0.5378220714628696,
+     0.537580631673336,
+     0.5376369580626488,
+     0.537664957344532,
+     0.5377988778054714,
+     0.5375575870275497,
+     0.5377677194774151,
+     0.5377953760325909,
+     0.5376479402184486,
+     0.5376263856887817,
+     0.5378165133297443
+    ]
+   }
+  },
+  "Kr": {
+   "electrons": [
+    18,
+    18
+   ],
+   "refA": 1.190280519425869,
+   "refB": 1.1899723455309867,
+   "ref_step_s": 1.190126432478428,
+   "cand_step_s": 0.9568628393113613,
+   "speedup": 1.243779550823546,
+   "threshold": 1.02,
+   "ref_gap": 0.00025894214805436853,
+   "max_window_range": 0.006228030544462739,
+   "benefit": "PASS",
+   "bitwise_8step": "PASS",
+   "bitwise_long": "PASS",
+   "verdict": "PASS",
+   "windows_s": {
+    "refA": [
+     1.188788855075836,
+     1.190280519425869,
+     1.1962019585072994
+    ],
+    "cand": [
+     0.9548573173582554,
+     0.9568628393113613,
+     0.9574943780899048
+    ],
+    "refB": [
+     1.1899723455309867,
+     1.1899278976023198,
+     1.1906761139631272
+    ]
+   },
+   "step_s": {
+    "refA": [
+     1.3476376198232174,
+     1.1892450638115406,
+     1.18943802267313,
+     1.1885933615267277,
+     1.187399972230196,
+     1.1886686831712723,
+     1.189844235777855,
+     1.1899093836545944,
+     1.1901043467223644,
+     1.190196268260479,
+     1.1913628205657005,
+     1.1898297779262066,
+     1.1898511797189713,
+     1.2163572385907173,
+     1.1920892037451267,
+     1.1914490275084972,
+     1.1912631429731846
+    ],
+    "cand": [
+     1.1351455673575401,
+     0.9479557350277901,
+     0.9536318480968475,
+     0.9542993493378162,
+     0.9542750082910061,
+     0.9551953226327896,
+     0.9568850584328175,
+     0.9568973295390606,
+     0.9558056518435478,
+     0.9584225006401539,
+     0.9561138302087784,
+     0.9570748843252659,
+     0.9584704488515854,
+     0.9530071690678596,
+     0.9581943154335022,
+     0.9577767252922058,
+     0.9600232318043709
+    ],
+    "refB": [
+     1.3503618761897087,
+     1.1868301220238209,
+     1.187796838581562,
+     1.1891994997859001,
+     1.1909415796399117,
+     1.1902532689273357,
+     1.1916705407202244,
+     1.1897389069199562,
+     1.189964521676302,
+     1.18941904976964,
+     1.1894448325037956,
+     1.1910721771419048,
+     1.1906888000667095,
+     1.190231792628765,
+     1.1904570795595646,
+     1.1908909864723682,
+     1.1911119110882282
+    ]
+   }
+  },
+  "Cd": {
+   "electrons": [
+    24,
+    24
+   ],
+   "refA": 2.3869353331625462,
+   "refB": 2.387002944946289,
+   "ref_step_s": 2.3869691390544174,
+   "cand_step_s": 1.8899949356913566,
+   "speedup": 1.2629500185307474,
+   "threshold": 1.02,
+   "ref_gap": 2.8325369874534623e-05,
+   "max_window_range": 0.006617373093887136,
+   "benefit": "PASS",
+   "bitwise_8step": "PASS",
+   "bitwise_long": "PASS",
+   "verdict": "PASS",
+   "windows_s": {
+    "refA": [
+     2.3869353331625462,
+     2.3854167804121973,
+     2.3888138554990292
+    ],
+    "cand": [
+     1.8826847195625305,
+     1.8899949356913566,
+     1.8951915211975574
+    ],
+    "refB": [
+     2.3852836556732653,
+     2.387002944946289,
+     2.3941656537353992
+    ]
+   },
+   "step_s": {
+    "refA": [
+     2.5392874404788017,
+     2.3911767676472664,
+     2.3894900493323803,
+     2.388872805982828,
+     2.385729782283306,
+     2.385322391986847,
+     2.3852616362273693,
+     2.385193560272455,
+     2.384868312627077,
+     2.3853121995925903,
+     2.3851068317890167,
+     2.386602997779846,
+     2.386858932673931,
+     2.387677062302828,
+     2.387284006923437,
+     2.3898565992712975,
+     2.3923926763236523
+    ],
+    "cand": [
+     2.0469738580286503,
+     1.8759546540677547,
+     1.8780837915837765,
+     1.8811611235141754,
+     1.882904227823019,
+     1.8843218013644218,
+     1.8869526535272598,
+     1.8889671713113785,
+     1.8869898356497288,
+     1.8882785625755787,
+     1.8916053511202335,
+     1.8941337577998638,
+     1.8938990198075771,
+     1.8950906470417976,
+     1.892674047499895,
+     1.894981250166893,
+     1.8993126414716244
+    ],
+    "refB": [
+     2.5350385159254074,
+     2.385113652795553,
+     2.3850808031857014,
+     2.385105464607477,
+     2.385159384459257,
+     2.3860396817326546,
+     2.385032944381237,
+     2.385171066969633,
+     2.3864575922489166,
+     2.3856083676218987,
+     2.388358239084482,
+     2.3894194588065147,
+     2.3918637558817863,
+     2.3915352821350098,
+     2.3931703828275204,
+     2.3941727690398693,
+     2.4000860787928104
+    ]
+   }
+  },
+  "Xe": {
+   "electrons": [
+    27,
+    27
+   ],
+   "refA": 3.7099151998758315,
+   "refB": 3.7102158538997174,
+   "ref_step_s": 3.7100655268877745,
+   "cand_step_s": 2.956376162171364,
+   "speedup": 1.2549368968537649,
+   "threshold": 1.02,
+   "ref_gap": 8.103738915309972e-05,
+   "max_window_range": 0.004625069119158091,
+   "benefit": "PASS",
+   "bitwise_8step": "PASS",
+   "bitwise_long": "PASS",
+   "verdict": "PASS",
+   "windows_s": {
+    "refA": [
+     3.7136264607310294,
+     3.7099151998758315,
+     3.7092430137097834
+    ],
+    "cand": [
+     2.9504292123019695,
+     2.956376162171364,
+     2.9641026563942434
+    ],
+    "refB": [
+     3.709806623309851,
+     3.7102158538997174,
+     3.7110513776540754
+    ]
+   },
+   "step_s": {
+    "refA": [
+     3.862830240279436,
+     3.7093989364802837,
+     3.708040501922369,
+     3.70837739482522,
+     3.7089227735996246,
+     3.7329197376966476,
+     3.709871895611286,
+     3.7079798839986324,
+     3.7081215791404247,
+     3.7089441791176796,
+     3.709090080112219,
+     3.7154402770102024,
+     3.7098909206688404,
+     3.7092965841293335,
+     3.7092248164117336,
+     3.7084460146725178,
+     3.7093567326664925
+    ],
+    "cand": [
+     3.099759742617607,
+     2.9438577853143215,
+     2.945722956210375,
+     2.9484220892190933,
+     2.954477783292532,
+     2.9476329162716866,
+     2.955890316516161,
+     2.9498599134385586,
+     2.9564580470323563,
+     2.9585575833916664,
+     2.9576238468289375,
+     2.9593814201653004,
+     2.957744922488928,
+     2.960595179349184,
+     2.970581967383623,
+     2.965760473161936,
+     2.9658307395875454
+    ],
+    "refB": [
+     3.8632791563868523,
+     3.709582455456257,
+     3.7097438536584377,
+     3.7096929512917995,
+     3.7095108665525913,
+     3.709514781832695,
+     3.71057066321373,
+     3.7092182151973248,
+     3.709330528974533,
+     3.709457766264677,
+     3.7096134945750237,
+     3.713459264487028,
+     3.7102041244506836,
+     3.7116241566836834,
+     3.7109973318874836,
+     3.71185315400362,
+     3.7105781212449074
+    ]
+   }
+  }
+ },
+ "previous_best_round7": {
+  "Fe": {
+   "ref_step_s": 0.538251144438982,
+   "cand_step_s": 0.43270978331565857,
+   "speedup": 1.243907961392987,
+   "verdict": "PASS"
+  },
+  "Kr": {
+   "ref_step_s": 1.190485954284668,
+   "cand_step_s": 0.9721117004752159,
+   "speedup": 1.2246390550619852,
+   "verdict": "PASS"
+  },
+  "Cd": {
+   "ref_step_s": 2.3866017926484346,
+   "cand_step_s": 1.9196436189115047,
+   "speedup": 1.2432525335102091,
+   "verdict": "PASS"
+  },
+  "Xe": {
+   "ref_step_s": 3.7081647370010615,
+   "cand_step_s": 3.029811644554138,
+   "speedup": 1.2238928263630555,
+   "verdict": "PASS"
+  }
+ },
+ "frozen_baseline": {
+  "Fe": {
+   "median_step_s": 0.5376137211918831,
+   "windows_s": [
+    0.5378994658589363,
+    0.5375751040875911,
+    0.5376137211918831
+   ],
+   "first_step_s": 21.62763360515237
+  },
+  "Kr": {
+   "median_step_s": 1.1863404296338558,
+   "windows_s": [
+    1.1859436117112636,
+    1.1863404296338558,
+    1.1866601340472698
+   ],
+   "first_step_s": 21.010559741407633
+  },
+  "Cd": {
+   "median_step_s": 2.3899515852332116,
+   "windows_s": [
+    2.386223277449608,
+    2.3899515852332116,
+    2.3952895969152452
+   ],
+   "first_step_s": 22.809401143342257
+  },
+  "Xe": {
+   "median_step_s": 3.710799854248762,
+   "windows_s": [
+    3.710423728823662,
+    3.711211049556732,
+    3.710799854248762
+   ],
+   "first_step_s": 22.656744211912155
+  }
+ },
+ "runtime_files_sha256": {
+  "ferminet/base_config.py": "0424f57cbaecc2a317c045807b334790c84254b3c475f946b7491cb2aea0c286",
+  "ferminet/checkpoint.py": "628ffbe321bf87adef84cbec5b319dc2ff68e0ec9648d42a50872e70f3aac466",
+  "ferminet/configs/atom.py": "db430d0febd4b3ab330e230b0dbc5588abeff9531710252859dc102555bb0077",
+  "ferminet/configs/c2h4.py": "9ad9a5e614700709cec83426222e7ae41894f039403fadee47adaf5e4eb8cbb6",
+  "ferminet/configs/ch4.py": "8c877b85cfeb98a2a1b286b0b03d7240b4ddbbc5b782eacb33aea46eeef43a99",
+  "ferminet/configs/diatomic.py": "97e6925d584201e9abd0ee4f06c0d30e12722d9aded406b3089142a36916aea0",
+  "ferminet/configs/excited/atoms.py": "000c98e6c2148ea5ecd922d5e52517a5bed2ed4d77a104ee758b2d4cbc198028",
+  "ferminet/configs/excited/benzene.py": "13744e903b5e8284bfcd265d9d926ce70370d5c7860d92ca7e941900bec1726c",
+  "ferminet/configs/excited/carbon_dimer.py": "53a4e0fb4e69946b2b521375529e6c3498c92f38a6dc1d96d8257ac07fca7fa2",
+  "ferminet/configs/excited/double_excitation.py": "6b8b74622080bc0f0b71b4df27ce35ea64e640a6e672469d26ee2822cb4cd770",
+  "ferminet/configs/excited/__init__.py": "ea62cc744e122fb79d6c9360968b734b62a2ac198b6bbcd076dbefc2dd124b4d",
+  "ferminet/configs/excited/oscillator.py": "9e0582bb85ab45b5bab2d0d95ce1682ab045db57741b293ee4e5b838537d4c85",
+  "ferminet/configs/excited/presets.py": "04a666fb1b6ed76a64a74c0e92251b8d465edbc3d802ea24f2bd19966faaa34a",
+  "ferminet/configs/excited/twisted_ethylene.py": "59425d1d1ce8b6205205d6a3a7fe4bb268a1fa590aae090237b966d6e94a8c55",
+  "ferminet/configs/h4.py": "66c20fe2a58b0a5afc704b45a27c6d5a32fad35f28e97ac5f05cccb78cdc516e",
+  "ferminet/configs/hcl.py": "05cb061673efbeba6609e4ccf5187219017db55bef1819e7a689f911f62fbf89",
+  "ferminet/configs/heg.py": "2c353fa2be94e19a196b7f06a8fdaaaba18e37c2edd9def5712a13fd2c666d21",
+  "ferminet/configs/hn.py": "32ba15a2ea46cc461495a6249c23567a1c2c26cf16e35c2fd1f72ac75e104468",
+  "ferminet/configs/__init__.py": "ea62cc744e122fb79d6c9360968b734b62a2ac198b6bbcd076dbefc2dd124b4d",
+  "ferminet/configs/li_excited.py": "389d200a1263fbc36bfff88678263eb80a9c711baa8b5dc15ffba1c39db64071",
+  "ferminet/configs/li_wqmc.py": "2f8dca4940f0c161e026c43c6ba253379f5941167836e65f2569cb7630f27b5c",
+  "ferminet/configs/nh3.py": "7ad5f94486d2126089ca22575d318db1809fa8e62d9a7f5782f90b2ef7d9cc6c",
+  "ferminet/configs/organic.py": "cd8c54de159a923cbfe5f6ca3deae3be039f3772f37f264657720de2a970a3e5",
+  "ferminet/constants.py": "1fb715ce1826ad37070bfabfe31e26138fb66b5007a5d93364c4b8e6a0ca7ffa",
+  "ferminet/curvature_tags_and_blocks.py": "68e7efac3d23dc991189a152a8121000e7546b55896ca6d7cd8bba48f8b3ef93",
+  "ferminet/density.py": "2d34da2afeaa295fcdd2dc7235f340e164d7a6232c6304783e092512d3ce5d7c",
+  "ferminet/envelopes.py": "54865b9e8f13e24f252f6a06b279ddd0bd9e26ca9fd4e6d064ce9744ea84f048",
+  "ferminet/hamiltonian.py": "f9c86ad1030308b4b52257f0f7f13b61a32f21591a6f760faf894872d9962931",
+  "ferminet/__init__.py": "b8c1370cb2a17d5a06fb9a605aa6506cf066d938f5cc848f6bb987ced6128838",
+  "ferminet/jastrows.py": "e5f1a24fda6db134f82a780a3cd50e164c26feb07721ff35a2fdd1dd0c7e3e40",
+  "ferminet/loss.py": "a52974116d7cfd2f324369504f1a923ee7e7e0176a19bf444cff924e1374a353",
+  "ferminet/main.py": "8a07d1ddab6e7cd980b1dce3cb8fa8260ac88284fa4676f286788e069b13f6d5",
+  "ferminet/mcmc.py": "018256a0d55b18cf59418f2efacd5d315544c0699e51688cf7e5de72f036c758",
+  "ferminet/network_blocks.py": "e65811c741613040e316187afddc3d935ca0594b735c29eb072c7b7f1527df3d",
+  "ferminet/networks.py": "32151701f4d85dba445a9ec15fd639ec76bd6a29e4d2d36c9fb8ac7bfadb82df",
+  "ferminet/observables.py": "e238f3f0051a2e2d40749b3b6bea27f486c0d37663ecbcc1f5297aa1959cf453",
+  "ferminet/pallas_trsm.py": "51b824299252b2bbee967c359affeb62015a5d216de1ac391f122ef464c7adbe",
+  "ferminet/pbc/envelopes.py": "4857b8217bbdce26a7326da347c92475d9a8d449cff4b26b3a4bf0ad2f6921ec",
+  "ferminet/pbc/ewald.py": "fd96aa7766f2c3bb6251a79e335bb66a44e73bb92e290f6e681877cea72f0476",
+  "ferminet/pbc/feature_layer.py": "a96d5d220dc882e58077afb270dc654f10c36e5ba34487c549e1b09904569e67",
+  "ferminet/pbc/hamiltonian.py": "72d31ffe19cdae53e0afc28d1a5df12281d92c35f0302ad04b0e4e4cc1eae055",
+  "ferminet/pbc/__init__.py": "3939998c6e1e7822c4e056bec4b0df773f1dbeacb11e26d3b4bc7d6cd5471282",
+  "ferminet/pbc/tests/features_test.py": "959cad6ff4f4ff15cbd7532f7fb15a214d0cf3c7ba8ef7721d7660bcf0fb4925",
+  "ferminet/pbc/tests/hamiltonian_test.py": "d9dff14b8301c2c4e04fe39292fcda8542a275842f1a3a546cfa55de44141149",
+  "ferminet/pbc/tests/__init__.py": "3939998c6e1e7822c4e056bec4b0df773f1dbeacb11e26d3b4bc7d6cd5471282",
+  "ferminet/pretrain.py": "f35adf77c8a6131529832ce7cad1782ac1b3148fe3b19a122aa7aee579ed2142",
+  "ferminet/pseudopotential.py": "7aaad3bd261440691709ee67252a159af85f31b1bc72931fa7859eb3a2efae94",
+  "ferminet/psiformer.py": "651dcc6b437928bf3ddd33b26ed2b301673004999c445acaea134a0a717b4840",
+  "ferminet/sto.py": "56a2eb22dde9f58bfba0d7e142f85f94de70a15e46b95b44f8b98f04e4e473e7",
+  "ferminet/tests/envelopes_test.py": "4c15df25ebf1b24a59fffd12b928696d10eac74fbfd6e923d7c2599259deaed7",
+  "ferminet/tests/excited_test.py": "2587652643072da3de4567543e8e0ff35b1b7ca8e67ba451b5bba4a620bda825",
+  "ferminet/tests/hamiltonian_test.py": "94502861547b0b20dfbaf334be0501f8ba5ec6b4f6dce3c3f22f3d99d6a20031",
+  "ferminet/tests/network_blocks_test.py": "96b38251ec6608edc9cd21296d3ed4db972e054ccacbe3acc4d4d660351a1cb3",
+  "ferminet/tests/networks_test.py": "52914160f062e13a224ad647552e6b4242e58e2446e9ae9bbeaccca8d772c2b3",
+  "ferminet/tests/psiformer_test.py": "3f90339f3f76f6171ab30a74f9c0fb716f728502a16da0ef3ccfcf9edac0020f",
+  "ferminet/tests/train_test.py": "7d16a3f8c445d48323e88a194ffe017faaeb354df2b401951b0c64b678d496a4",
+  "ferminet/train.py": "f4608486aaebcd19f084d39d18edae5c2b860b59be796f9d8b4ea6214e639a40",
+  "ferminet/utils/analysis_tools.py": "55483d9ec7b5eb1efd30cf98ad41a4c2058524e79eefcd38eea2a4d994f5c7d3",
+  "ferminet/utils/elements.py": "8b28a745ba19821d0a0894b5482926fb280e5305d0bb832e0e5d44faa50464b5",
+  "ferminet/utils/gto.py": "87eabb638165db0fdca6955f28ace0eb85a9e509bab0a7de59bf8223b5d49a5c",
+  "ferminet/utils/__init__.py": "ea62cc744e122fb79d6c9360968b734b62a2ac198b6bbcd076dbefc2dd124b4d",
+  "ferminet/utils/multi_host.py": "8f8b8451e7bf763cc0a138e6cf9ca8f0da5630aca29e775b079e91748dec1f3e",
+  "ferminet/utils/pseudopotential.py": "4867c27a76b5116d66f132c372022062204a7b157be5d07839bea57e2ec5a618",
+  "ferminet/utils/scf.py": "297ca9f23dec458d0fce97994f76a4d0171d6c6cdfc62c23986a309b99ab14e4",
+  "ferminet/utils/statistics.py": "10bc66bb78cbfe7858f901ee24813ca28fe06bc3ad2e77671172d5ee92c0d7c0",
+  "ferminet/utils/system.py": "a0b4be1a8a62fbcb0f16aaaa3f97fdbd6a8b2939d7b180e607cb6da2e728589b",
+  "ferminet/utils/tests/elements_test.py": "ce6cc0bb56f5eec906277d4850356aec8fd66c188d641119ed1c7f57525f0e29",
+  "ferminet/utils/tests/gto_test.py": "8d1338d12dcc34533bff52eca142734c790767925e0cf9cb8389ffd3b1743053",
+  "ferminet/utils/tests/scf_test.py": "fe1c054b3e73d778268a6b7838f95e9c3442cfe299d9e2711a083109d0019a99",
+  "ferminet/utils/tests/statistics_test.py": "a799161210496cfaf397730954b17ba43ae6ea6957927f3f7aefbda7b90cb6c4",
+  "ferminet/utils/tests/system_test.py": "7bcdf973fe5347d9b89b831cb9c77b89846bfd54d3ae71fcd62705b8b1ff9f7a",
+  "ferminet/utils/tests/units_test.py": "648a96b33d6bcd8cdc07281aaa56d33e76eeb061ccf5e1091f297c6361d33148",
+  "ferminet/utils/units.py": "443855683c3fc63cf2e9094fb91464a5c695f9f90a8f21c6d3dc1070f2ad74d8",
+  "ferminet/utils/utils.py": "cedffb5a9d131f6b9e25c5d2e090eb964de0fe01200d8a19d47f27e769b59a3e",
+  "ferminet/utils/writers.py": "b5ed2e827425ce57cac320ab82e6dcf9cad7b1b3a6f74113db432faa027b1949"
+ },
+ "notes": [
+  "Numbers are produced by bench/gate.py from the raw timing records summarised here.",
+  "The long bit-wise record of the reference was taken once (110 steps) and compared with the final candidate's own 110-step record.",
+  "Speed in deterministic mode was not measured and is not claimed."
+ ]
+}

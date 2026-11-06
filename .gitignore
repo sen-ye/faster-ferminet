@@ -1,0 +1,9 @@
+*.pyc
+*.egg-info
+*.csv
+*.npz
+# Faster-FermiNet
+runs/
+third_party/
+.venv/
+.pytest_cache/

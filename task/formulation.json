@@ -1,0 +1,109 @@
+{
+ "task": "Speed up FermiNet training steps for Fe, Kr, Cd, Xe with results bit-for-bit identical to the original",
+ "upstream": {
+  "repository": "https://github.com/google-deepmind/ferminet",
+  "commit": "e9d5a604d15c617864e7caefd948d87453b01ae6"
+ },
+ "method": {
+  "pipeline": "ResearchBoost-Agent (https://github.com/DAGroup-PKU/ResearchBoost-Agent) @ fba5c953",
+  "rounds": 8,
+  "attempts": 16
+ },
+ "constraints": [
+  "one generic optimization set for all four atoms; no per-element or per-electron-count code paths",
+  "bit-wise identical to the original (deterministic XLA mode), every recorded step",
+  "upstream hyper-parameters, precision and random streams unchanged"
+ ],
+ "workload": {
+  "config": "ferminet/configs/atom.py (upstream defaults)",
+  "batch_size": 1024,
+  "optimizer": "KFAC (upstream hyper-parameters)",
+  "mcmc_steps_per_iteration": 10,
+  "network": "FermiNet, hidden (256,32)x4, 16 full determinants, laplacian=default",
+  "pretrain_basis": "ano-rcc",
+  "seed": "debug.deterministic=True (seed 23)",
+  "spin_polarisation": {
+   "Fe": 4,
+   "Kr": 0,
+   "Cd": 0,
+   "Xe": 0
+  },
+  "precision": "upstream (float32 params; XLA default dot precision)",
+  "bench_only": {
+   "pretrain.iterations": 20,
+   "mcmc.burn_in": 10,
+   "note": "one-off phases shortened; the timed training step is unchanged"
+  }
+ },
+ "atoms": {
+  "Fe": {
+   "electrons": [
+    15,
+    11
+   ]
+  },
+  "Kr": {
+   "electrons": [
+    18,
+    18
+   ]
+  },
+  "Cd": {
+   "electrons": [
+    24,
+    24
+   ]
+  },
+  "Xe": {
+   "electrons": [
+    27,
+    27
+   ]
+  }
+ },
+ "hardware": {
+  "gpu": "NVIDIA H20 (Hopper, compute capability 9.0)",
+  "memory": "97871 MiB HBM3 (96 GB class)",
+  "power_limit_w": 500,
+  "driver": "535.261.03",
+  "gpus_per_run": 1,
+  "parallelism": "four independent single-GPU runs (Fe, Kr, Cd, Xe), one per GPU"
+ },
+ "software": {
+  "python": "3.11.2",
+  "jax": "0.7.2",
+  "jaxlib": "0.7.2",
+  "jax-cuda12-plugin": "0.7.2",
+  "cublas": "nvidia-cublas-cu12 12.9.1.4",
+  "cudnn": "nvidia-cudnn-cu12 9.24.0.43",
+  "cusolver": "nvidia-cusolver-cu12 11.7.5.82",
+  "kfac-jax": "0.0.8",
+  "optax": "0.2.6",
+  "pyscf": "2.12.1",
+  "numpy": "2.4.6",
+  "folx": "0.2.31",
+  "ml-collections": "1.1.0"
+ },
+ "frozen_baseline_step_s": {
+  "Fe": 0.5376137211918831,
+  "Kr": 1.1863404296338558,
+  "Cd": 2.3899515852332116,
+  "Xe": 3.710799854248762
+ },
+ "gates": {
+  "timing": "default XLA flags; ABA in independent processes; median of 3x5-step windows after compile + 2 warm-up steps; pass if speedup > max(1.02, 1 + 2*|A-B|/mean) and window range < 10%",
+  "bitwise": "XLA_FLAGS=--xla_gpu_deterministic_ops=true for both trees; per step energy bits, pmove, sha256 of all leaves of walkers/params/opt_state/mcmc_width; 8 steps (+110 steps for the final candidate)",
+  "kernel_probe": "bench/trsm_check.py: Pallas solve vs real cuBLAS, n in 9..64, 4 variants, 3 input scales, 0 mismatches",
+  "reference_self_check": "reference reproduces itself bit for bit in deterministic mode (done twice before any candidate)"
+ },
+ "evaluator_sha256": {
+  "bench/fnbench.py": "8e8b48685abeff13d1d47a6cf5855ce2151753ae3fa55c2333b2e8566847c0f7",
+  "bench/compare.py": "b8a650ab8f3da9232d93de157ca9cd595f20a682893b4bc5aa8220f094a7c5a2",
+  "bench/gate.py": "61128586932bf5e67aaf36fae278b4e7b4eef042e287295fd388ca6de6066052",
+  "bench/summarize.py": "cad5a9c6092ccff47a3139f3f8d934c23ee731a2f3bc771f8984f6f028f33757",
+  "bench/launch.py": "db333e515f5297ac86c5818d00fc6ee71983a868a92fe482264d3333e4094f90",
+  "bench/make_jobs.py": "0ce9c587653cc43a6265e23ea9d9e5adaa56df4f92e00944c92860e81f8dc31e",
+  "bench/trsm_check.py": "9cac96166934b47acf9257ffcf14e8b1f98f09abbd20bbaada69c12474d73591"
+ },
+ "note": "evaluator_sha256 covers the published bench files; their measurement logic is the one used for the recorded runs (only machine-identifying fingerprint fields were removed for publication)."
+}

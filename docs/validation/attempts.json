@@ -1,0 +1,397 @@
+{
+ "schema_version": 1,
+ "speedup_reference": "frozen batch-1024 baseline medians (single reference run per atom)",
+ "attempts": [
+  {
+   "round": 2,
+   "attempt": "2a",
+   "change": "row-major Pallas trsm",
+   "step_s": {
+    "Fe": 0.47031914368271827,
+    "Kr": 1.041176002472639,
+    "Cd": 2.046955793350935,
+    "Xe": 3.104944808036089
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.1430827947640643,
+    "Kr": 1.1394235238004646,
+    "Cd": 1.1675638492030067,
+    "Xe": 1.195125866535413
+   },
+   "bitwise_8step": {
+    "Fe": false,
+    "Kr": false,
+    "Cd": false,
+    "Xe": false
+   },
+   "first_mismatch": {
+    "Fe": "('energy/pmove', 0, -318.73565673828125, -318.7371826171875)",
+    "Kr": "('energy/pmove', 0, -625.25732421875, -625.258544921875)",
+    "Cd": "('energy/pmove', 0, -1121.61279296875, -1121.61865234375)",
+    "Xe": "('energy/pmove', 0, -1426.19482421875, -1426.1953125)"
+   }
+  },
+  {
+   "round": 2,
+   "attempt": "2b",
+   "change": "layout-preserving Pallas trsm",
+   "step_s": {
+    "Fe": 0.4839383326470852,
+    "Kr": 1.2117689356207848,
+    "Cd": 2.3859178967773915,
+    "Xe": 4.326438531279564
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.1109136948321492,
+    "Kr": 0.9790153838413904,
+    "Cd": 1.0016906233283502,
+    "Xe": 0.8577031263521213
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  },
+  {
+   "round": 2,
+   "attempt": "2c",
+   "change": "tiled 8-row block kernel",
+   "step_s": {
+    "Fe": 0.45972184985876086,
+    "Kr": 1.0703417249023914,
+    "Cd": 2.095374436676502,
+    "Xe": 3.1783179722726347
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.1694326066012586,
+    "Kr": 1.1083753926738142,
+    "Cd": 1.140584490962838,
+    "Xe": 1.1675357489783755
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  },
+  {
+   "round": 2,
+   "attempt": "2d",
+   "change": "register-resident in-block solve",
+   "step_s": {
+    "Fe": 0.45629953145980834,
+    "Kr": 1.0511481575667858,
+    "Cd": 2.0353931300342083,
+    "Xe": 3.1695260018110276
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.1782035354538536,
+    "Kr": 1.1286139076531467,
+    "Cd": 1.1741965470783742,
+    "Xe": 1.170774384601501
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  },
+  {
+   "round": 3,
+   "attempt": "3a",
+   "change": "kernel: static unroll of inner loops",
+   "step_s": {
+    "Fe": 0.4638268530368805,
+    "Kr": 1.0493470758199692,
+    "Cd": 2.002805033326149,
+    "Xe": 3.1603874579071998
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.1590827863283188,
+    "Kr": 1.130551041662587,
+    "Cd": 1.193302166444085,
+    "Xe": 1.1741597837836137
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  },
+  {
+   "round": 3,
+   "attempt": "3b",
+   "change": "kernel: index-tensor operand loads",
+   "step_s": {
+    "Fe": 0.45788989365100863,
+    "Kr": 1.0922410987317561,
+    "Cd": 2.166476994752884,
+    "Xe": 3.2929523825645446
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.1741113500129745,
+    "Kr": 1.0861525271401726,
+    "Cd": 1.1031511486258907,
+    "Xe": 1.126891440610143
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  },
+  {
+   "round": 4,
+   "attempt": "4a",
+   "change": "Laplacian loop unroll x2",
+   "step_s": {
+    "Fe": 0.43339036256074903,
+    "Kr": 0.9611112087965011,
+    "Cd": 1.9153135128319263,
+    "Xe": 3.0273491986095906
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.2404837939065267,
+    "Kr": 1.2343425180935987,
+    "Cd": 1.2478122089263075,
+    "Xe": 1.2257587779939851
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  },
+  {
+   "round": 4,
+   "attempt": "4b",
+   "change": "Laplacian loop unroll x3",
+   "step_s": {
+    "Fe": 0.4425697259604931,
+    "Kr": 0.9700523406267166,
+    "Cd": 1.8955470338463782,
+    "Xe": 3.0116666302084925
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.2147548502670837,
+    "Kr": 1.2229653802674225,
+    "Cd": 1.260824206711244,
+    "Xe": 1.232141637798693
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  },
+  {
+   "round": 4,
+   "attempt": "4c",
+   "change": "Laplacian loop unroll x4",
+   "step_s": {
+    "Fe": 0.43406405448913576,
+    "Kr": 0.963785220682621,
+    "Cd": 1.8796154409646988,
+    "Xe": 2.931684951484203
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.238558492996197,
+    "Kr": 1.2309178478516256,
+    "Cd": 1.2715109341762945,
+    "Xe": 1.2657566947533438
+   },
+   "bitwise_8step": {
+    "Fe": false,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {
+    "Fe": "('energy/pmove', 0, -318.73565673828125, -318.7357177734375)"
+   }
+  },
+  {
+   "round": 4,
+   "attempt": "4d",
+   "change": "Laplacian loop unroll x6",
+   "step_s": {
+    "Fe": 0.4476964555680752,
+    "Kr": 0.9625311709940434,
+    "Cd": 1.8773766070604325,
+    "Xe": 3.0343639224767687
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.2008442651387832,
+    "Kr": 1.2325215695702363,
+    "Cd": 1.2730272531601217,
+    "Xe": 1.222925116780277
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  },
+  {
+   "round": 5,
+   "attempt": "5a",
+   "change": "kernel: 16-column chunks per program",
+   "step_s": {
+    "Fe": 0.4706830769777298,
+    "Kr": 1.0607195764780044,
+    "Cd": 1.9988441459834576,
+    "Xe": 3.515293695777655
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.142198960378854,
+    "Kr": 1.1184298432324222,
+    "Cd": 1.1956668007536546,
+    "Xe": 1.0556158817415275
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  },
+  {
+   "round": 5,
+   "attempt": "5b",
+   "change": "kernel: 32-column chunks per program",
+   "step_s": {
+    "Fe": 0.43348831683397293,
+    "Kr": 1.0418971285223961,
+    "Cd": 2.006960529088974,
+    "Xe": 3.270609912276268
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.2402034848791332,
+    "Kr": 1.138634897013592,
+    "Cd": 1.1908313843711167,
+    "Xe": 1.1345895578437026
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  },
+  {
+   "round": 6,
+   "attempt": "6a",
+   "change": "kernel: [k,t] tile orientation (V4)",
+   "step_s": {
+    "Fe": 0.43424538522958755,
+    "Kr": 0.9810514055192471,
+    "Cd": 1.8947071045637132,
+    "Xe": 3.0493923552334308
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.2380412998692991,
+    "Kr": 1.2092540951062132,
+    "Cd": 1.26138313382402,
+    "Xe": 1.2168981298455117
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  },
+  {
+   "round": 7,
+   "attempt": "7a",
+   "change": "XLA while-loop double buffering",
+   "step_s": {
+    "Fe": 0.43308115378022194,
+    "Kr": 0.9739730514585971,
+    "Cd": 1.9240294881165028,
+    "Xe": 3.024679323285818
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.2413694673601725,
+    "Kr": 1.2180423553374733,
+    "Cd": 1.2421595406902082,
+    "Xe": 1.226840751573488
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  },
+  {
+   "round": 7,
+   "attempt": "7b",
+   "change": "XLA latency-hiding scheduler",
+   "step_s": {
+    "Fe": 0.43407917618751524,
+    "Kr": 0.9716315805912018,
+    "Cd": 1.921470119804144,
+    "Xe": 3.0309885174036024
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.2385153462409877,
+    "Kr": 1.2209776352802486,
+    "Cd": 1.2438140778774225,
+    "Xe": 1.2242870050288075
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  },
+  {
+   "round": 8,
+   "attempt": "8a",
+   "change": "kernel V5: [k,t] + unrolled independent loads",
+   "step_s": {
+    "Fe": 0.431945077329874,
+    "Kr": 0.9568628393113613,
+    "Cd": 1.8899949356913566,
+    "Xe": 2.956376162171364
+   },
+   "speedup_vs_frozen_baseline": {
+    "Fe": 1.2446344440714867,
+    "Kr": 1.2398228679124437,
+    "Cd": 1.2645280366103053,
+    "Xe": 1.2551852845151132
+   },
+   "bitwise_8step": {
+    "Fe": true,
+    "Kr": true,
+    "Cd": true,
+    "Xe": true
+   },
+   "first_mismatch": {}
+  }
+ ]
+}
