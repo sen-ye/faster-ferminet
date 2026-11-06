@@ -1,170 +1,189 @@
-"""Render the README figures from docs/validation/*.json (no third-party dependencies).
+"""Render the README figures from docs/validation/*.json.
 
-usage: python docs/tools/make_figures.py
+usage: python -m pip install matplotlib; python docs/tools/make_figures.py
+Visual layout follows the Faster-* case studies (benchmark bars + headline ratio;
+history line + milestone cards + footnote; module map).
 """
 import json
-import os
+import math
+from pathlib import Path
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-DOCS = os.path.dirname(HERE)
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.lines  # pylint: disable=g-import-not-at-top
+import matplotlib.pyplot as plt  # pylint: disable=g-import-not-at-top
+from matplotlib.patches import FancyBboxPatch  # pylint: disable=g-import-not-at-top
+
+DOCS = Path(__file__).resolve().parents[1]
 ATOMS = ['Fe', 'Kr', 'Cd', 'Xe']
-COL = {'Fe': '#4C78A8', 'Kr': '#F58518', 'Cd': '#54A24B', 'Xe': '#B279A2'}
-FONT = 'font-family="Helvetica,Arial,sans-serif"'
+RED, PINK, INK, MUTED, LIGHT, GRID, GREY = '#8b0000', '#d8bcc1', '#292626', '#7d7174', '#f7f2f1', '#ebe3e3', '#a89c9e'
+plt.rcParams.update({'font.family': 'DejaVu Sans', 'font.size': 12, 'svg.fonttype': 'path'})
 
 
-def svg(w, h, body):
-  return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">'
-          f'<rect width="{w}" height="{h}" fill="white"/>{body}</svg>\n')
+def gmean(xs):
+  return math.exp(sum(math.log(x) for x in xs) / len(xs))
 
 
-def text(x, y, s, size=13, anchor='middle', weight='normal', fill='#222'):
-  return (f'<text x="{x:.1f}" y="{y:.1f}" {FONT} font-size="{size}" text-anchor="{anchor}" '
-          f'font-weight="{weight}" fill="{fill}">{s}</text>')
+def load():
+  h20 = json.loads((DOCS / 'validation' / 'h20.json').read_text())
+  att = {a['attempt']: a for a in json.loads((DOCS / 'validation' / 'attempts.json').read_text())['attempts']}
+  return h20, att
 
 
 def benchmark(h20):
-  w, h = 880, 420
-  x0, y0, pw, ph = 70, 110, 780, 240
-  b = [text(w / 2, 30, 'Faster-FermiNet: time per training step (original = 1.00, lower is better)', 16,
-            weight='bold'),
-       text(w / 2, 52, 'NVIDIA H20, 1024 walkers per GPU, default XLA flags; bit-for-bit identical results', 12,
-            fill='#555')]
-  for i in range(0, 6):
-    v = i * 0.2
-    y = y0 + ph - v / 1.0 * ph
-    b.append(f'<line x1="{x0}" y1="{y:.1f}" x2="{x0 + pw}" y2="{y:.1f}" stroke="#ddd"/>')
-    b.append(text(x0 - 8, y + 4, f'{v:.1f}', 11, 'end'))
-  gw = pw / len(ATOMS)
-  for k, a in enumerate(ATOMS):
-    r = h20['rows'][a]
-    gx = x0 + k * gw
-    for j, (lab, val, sec, fill) in enumerate(
-        (('original', 1.0, r['ref_step_s'], '#BBBBBB'),
-         ('Faster-FermiNet', 1 / r['speedup'], r['cand_step_s'], COL[a]))):
-      bx = gx + gw * 0.18 + j * gw * 0.34
-      bh = val * ph
-      b.append(f'<rect x="{bx:.1f}" y="{y0 + ph - bh:.1f}" width="{gw * 0.3:.1f}" height="{bh:.1f}" fill="{fill}"/>')
-      b.append(text(bx + gw * 0.15, y0 + ph - bh - 6, f'{sec:.3f} s', 11))
-    b.append(text(gx + gw / 2, y0 + ph + 20, f'{a} ({sum(r["electrons"])} e-)', 13, weight='bold'))
-    b.append(text(gx + gw / 2, y0 + ph + 38, f'{r["speedup"]:.3f}x', 13, fill=COL[a], weight='bold'))
-  b.append(f'<rect x="{w / 2 - 190}" y="66" width="12" height="12" fill="#BBBBBB"/>')
-  b.append(text(w / 2 - 172, 76, 'original FermiNet', 11, 'start'))
-  b.append(f'<rect x="{w / 2 - 40}" y="66" width="12" height="12" fill="#4C78A8"/>')
-  b.append(text(w / 2 - 22, 76, 'Faster-FermiNet (per-atom colour)', 11, 'start'))
-  return svg(w, h, ''.join(b))
+  rows = h20['rows']
+  final = gmean([rows[a]['speedup'] for a in ATOMS])
+  fig = plt.figure(figsize=(14, 7), facecolor='white')
+  fig.text(.06, .90, 'Faster-FermiNet, optimized with an AI agent', color=RED, size=26, weight='bold')
+  fig.text(.06, .83, 'Fe · Kr · Cd · Xe  ·  1 NVIDIA H20 per atom  ·  1024 walkers per GPU  ·  bit-for-bit identical',
+           color=MUTED, size=14)
+  ax = fig.add_axes([.17, .20, .50, .54])
+  y = 0
+  ticks, labels = [], []
+  for a in ATOMS:
+    r = rows[a]
+    for lab, val, col in (('Baseline', 1.0, PINK), ('Faster', 1 / r['speedup'], RED)):
+      sec = r['ref_step_s'] if lab == 'Baseline' else r['cand_step_s']
+      ax.barh(y, val, height=.62, color=col)
+      ax.text(val + .015, y, f'{sec:.3f} s', va='center', size=12, color=INK, weight='bold')
+      ticks.append(y)
+      labels.append(f'{a} {lab.lower()}' if lab == 'Baseline' else f'{a} Faster-FermiNet')
+      y -= .8
+    y -= .55
+  ax.set_yticks(ticks)
+  ax.set_yticklabels(labels, color=MUTED, size=12)
+  ax.set_xlim(0, 1.25)
+  ax.set_xticks([0, .25, .5, .75, 1.0])
+  ax.set_xticklabels(['0', '0.25', '0.50', '0.75', '1.00'])
+  ax.set_xlabel('Time per training step, relative to baseline ↓', color=MUTED, size=14, labelpad=12)
+  ax.grid(axis='x', color=GRID)
+  ax.set_axisbelow(True)
+  for s in ax.spines.values():
+    s.set_visible(False)
+  ax.tick_params(length=0, labelcolor=MUTED, pad=8)
+  fig.text(.84, .55, f'{final:.2f}×', color=RED, size=60, weight='bold', ha='center')
+  fig.text(.84, .47, 'step speedup (geo-mean)', color=MUTED, size=17, ha='center')
+  fig.text(.84, .42, ' / '.join(f'{rows[a]["speedup"]:.3f}×' for a in ATOMS), color=MUTED, size=12.5, ha='center')
+  fig.text(.84, .38, 'formal check: PASS', color=MUTED, size=13, ha='center')
+  fig.text(.06, .07, 'Baseline → candidate → baseline in independent processes, default XLA flags; baseline = mean of the '
+           'two baseline runs.', color=MUTED, size=12)
+  fig.text(.06, .035, 'Bit-for-bit identity verified separately in deterministic XLA mode (8 and 110 training steps).',
+           color=MUTED, size=12)
+  fig.savefig(DOCS / 'performance-views' / 'benchmark.svg', facecolor='white')
+  plt.close(fig)
 
 
-def history(att, h20):
-  rows = att['attempts']
-  w, h = 980, 440
-  x0, y0, pw, ph = 70, 70, 860, 280
-  lo, hi = 0.80, 1.30
-  b = [text(w / 2, 30, 'Agent optimization history: 8 rounds, 16 attempts (speedup vs frozen baseline)', 16,
-            weight='bold'),
-       text(w / 2, 52, 'filled = bit-wise identical on all four atoms; x = bit-wise mismatch (rejected); '
-            'shaded = adopted into the final configuration', 12, fill='#555')]
-  for i in range(0, 6):
-    v = lo + i * 0.1
-    y = y0 + ph - (v - lo) / (hi - lo) * ph
-    b.append(f'<line x1="{x0}" y1="{y:.1f}" x2="{x0 + pw}" y2="{y:.1f}" stroke="#ddd"/>')
-    b.append(text(x0 - 8, y + 4, f'{v:.2f}x', 11, 'end'))
-  y1 = y0 + ph - (1.0 - lo) / (hi - lo) * ph
-  b.append(f'<line x1="{x0}" y1="{y1:.1f}" x2="{x0 + pw}" y2="{y1:.1f}" stroke="#888" stroke-dasharray="4,3"/>')
-  adopted = {'2c', '2d', '4a', '8a'}
-  n = len(rows)
-  dx = pw / n
-  prev_round = None
-  for i, r in enumerate(rows):
-    cx = x0 + (i + 0.5) * dx
-    if r['attempt'] in adopted:
-      b.append(f'<rect x="{cx - dx / 2:.1f}" y="{y0}" width="{dx:.1f}" height="{ph}" fill="#FFF3C4"/>')
-    if r['round'] != prev_round:
-      b.append(f'<line x1="{cx - dx / 2:.1f}" y1="{y0}" x2="{cx - dx / 2:.1f}" y2="{y0 + ph}" stroke="#ccc"/>')
-      b.append(text(cx - dx / 2 + 4, y0 + ph + 52, f'R{r["round"]}', 11, 'start', fill='#555'))
-      prev_round = r['round']
-    b.append(text(cx, y0 + ph + 18, r['attempt'], 11))
-    for k, a in enumerate(ATOMS):
-      v = max(lo, min(hi, r['speedup_vs_frozen_baseline'][a]))
-      y = y0 + ph - (v - lo) / (hi - lo) * ph
-      px = cx + (k - 1.5) * 5
-      if r['bitwise_8step'][a]:
-        b.append(f'<circle cx="{px:.1f}" cy="{y:.1f}" r="4" fill="{COL[a]}"/>')
-      else:
-        b.append(f'<path d="M{px - 4:.1f},{y - 4:.1f} L{px + 4:.1f},{y + 4:.1f} M{px - 4:.1f},{y + 4:.1f} '
-                 f'L{px + 4:.1f},{y - 4:.1f}" stroke="{COL[a]}" stroke-width="2"/>')
-  for k, a in enumerate(ATOMS):
-    b.append(f'<circle cx="{x0 + 20 + k * 70}" cy="{y0 + ph + 75}" r="5" fill="{COL[a]}"/>')
-    b.append(text(x0 + 30 + k * 70, y0 + ph + 79, a, 12, 'start'))
-  fin = h20['rows']
-  b.append(text(x0 + 330, y0 + ph + 79, 'final formal check (ABA): ' + ', '.join(
-      f'{a} {fin[a]["speedup"]:.3f}x' for a in ATOMS), 12, 'start'))
-  return svg(w, h, ''.join(b))
+def history(h20, att):
+  rows = h20['rows']
+  final = gmean([rows[a]['speedup'] for a in ATOMS])
+  r7 = gmean([h20['previous_best_round7'][a]['speedup'] for a in ATOMS])
+  g = lambda k: gmean([att[k]['speedup_vs_frozen_baseline'][a] for a in ATOMS])
+  # (label, value, kind): kind = screen (open), gate (filled), rejected (grey)
+  pts = [('R2a', g('2a'), 'rejected'), ('R2c', g('2c'), 'screen'), ('R2d', g('2d'), 'screen'),
+         ('R4a', g('4a'), 'screen'), ('R4c', g('4c'), 'rejected'), ('R7', r7, 'gate'), ('R8', final, 'gate')]
+  fig = plt.figure(figsize=(14, 13.5), facecolor='white')
+  fig.text(.09, .955, 'Faster-FermiNet', color=RED, size=17, weight='bold')
+  fig.text(.09, .918, 'Agent Optimization History', color=INK, size=31, weight='bold')
+  fig.text(.93, .930, f'{final:.2f}×', color=RED, size=48, weight='bold', ha='right')
+  fig.text(.93, .906, 'step speedup (geo-mean)', color=MUTED, size=14, ha='right')
+  fig.text(.09, .872, 'Cumulative speedup · Fe, Kr, Cd, Xe · 1 H20 per atom · 1024 walkers · 8 rounds, 16 attempts, '
+           '4 adopted', color=MUTED, size=14.2)
+  ax = fig.add_axes([.10, .505, .85, .27])
+  xs = list(range(len(pts)))
+  line = [(x, v) for x, (_, v, k) in zip(xs, pts) if k != 'rejected']
+  ax.plot([p[0] for p in line], [p[1] for p in line], color=RED, lw=3, zorder=2)
+  for i, (x, (lab, v, kind)) in enumerate(zip(xs, pts)):
+    if kind == 'gate':
+      ax.plot(x, v, 'o', color=RED, markersize=11, zorder=3)
+    elif kind == 'screen':
+      ax.plot(x, v, 'o', markerfacecolor='white', markeredgecolor=RED, markeredgewidth=2.5, markersize=11, zorder=3)
+    else:
+      ax.plot(x, v, 'o', markerfacecolor='white', markeredgecolor=GREY, markeredgewidth=2.5, markersize=11, zorder=3)
+    up = i % 2 == 0
+    col = RED if lab == 'R8' else (GREY if kind == 'rejected' else INK)
+    ax.annotate(f'{v:.2f}×', (x, v), xytext=(0, 16 if up else -26), textcoords='offset points', ha='center',
+                size=15, weight='bold', color=col)
+  ax.set_xticks(xs)
+  ax.set_xticklabels([p[0] for p in pts], color=MUTED, size=14)
+  ax.set_ylim(.98, 1.32)
+  ax.set_yticks([1.0, 1.1, 1.2, 1.3])
+  ax.set_yticklabels(['1.0×', '1.1×', '1.2×', '1.3×'], color=MUTED, size=14)
+  ax.set_xlim(-.5, len(pts) - .5)
+  ax.grid(axis='y', color=GRID)
+  ax.set_axisbelow(True)
+  for s in ax.spines.values():
+    s.set_visible(False)
+  ax.tick_params(length=0, pad=10)
+  for y, (face, edge, lab) in zip((.838, .815, .792), (
+      (RED, RED, 'Formal check: ABA timing + bit-wise 8 & 110 steps'),
+      ('white', RED, 'Screening: vs frozen baseline + bit-wise 8 steps'),
+      ('white', GREY, 'Faster but not bit-for-bit identical (rejected)'))):
+    fig.lines.append(matplotlib.lines.Line2D([.105], [y], marker='o', markerfacecolor=face, markeredgecolor=edge,
+                                             markeredgewidth=2.2, markersize=9, transform=fig.transFigure))
+    fig.text(.12, y - .005, lab, size=12.5, color=INK)
+  cards = [('R1', 'Profile: cuBLAS trsm = 28–36% of step', False),
+           ('R2a', 'Row-major Pallas trsm: fast, bits changed', True),
+           ('R2c', 'Bit-exact Pallas trsm, cuBLAS layout kept', False),
+           ('R2d', 'Register-resident in-block solve', False),
+           ('R4a', 'Laplacian loop unroll ×2', False),
+           ('R4c', 'Unroll ×4: Fe not bit-wise (rejected)', True),
+           ('R7', 'Formal check; XLA scheduling flags: no gain', False),
+           ('R8', 'Kernel V5: independent block loads', False)]
+  for i, (n, title, rej) in enumerate(cards):
+    col, row = i % 2, i // 2
+    xx, yy = .085 + col * .45, .375 - row * .075
+    fig.patches.append(FancyBboxPatch((xx, yy), .43, .058, boxstyle='round,pad=0.004', transform=fig.transFigure,
+                                      facecolor=LIGHT, edgecolor='none'))
+    fig.text(xx + .015, yy + .022, n, size=17, color=GREY if rej else RED, weight='bold')
+    fig.text(xx + .085, yy + .022, title, size=13.6, color=INK, weight='bold')
+  notes = ['Values: geometric mean of the Fe, Kr, Cd and Xe speedups. R7 and R8 are formal checks (original A → candidate →',
+           'original B); other points are screening runs against the frozen baseline. Cumulative configurations, not isolated',
+           'ablations. Timing uses default XLA flags; bit-wise identity is checked in deterministic XLA mode, because the',
+           'original is not bit-reproducible in default mode. All 16 attempts are listed in docs/history.md.']
+  for k, ln in enumerate(notes):
+    fig.text(.09, .072 - k * .019, ln, size=12, color=MUTED)
+  fig.savefig(DOCS / 'performance-views' / 'history.svg', facecolor='white')
+  plt.close(fig)
 
 
 def module_map():
-  w, h = 980, 330
-  boxes = [
-      (20, 'KFAC training step', 'pmap(_step): loss, gradient, curvature'),
-      (190, 'Local energy', 'kinetic term via jax.linearize(grad log|psi|)'),
-      (360, 'Hessian-diagonal loop', 'fori_loop over 3N directions, unroll=2 *'),
-      (530, 'slogdet JVP / transpose', 'custom_linear_solve -> lu_solve'),
-      (700, 'triangular_solve_p', 'CUDA lowering rule *'),
-  ]
-  b = [text(w / 2, 28, 'Where Faster-FermiNet changes the computation (highlighted = changed)', 16, weight='bold')]
-  for x, t, s in boxes:
-    star = '*' in s
-    b.append(f'<rect x="{x}" y="60" width="155" height="80" rx="8" fill="{"#FFF3C4" if star else "#F2F2F2"}" '
-             f'stroke="#999"/>')
-    b.append(text(x + 77, 92, t, 13, weight='bold'))
-    words = s.replace(' *', '').split(' ')
-    lines, cur = [], ''
-    for wd in words:
-      if len(cur) + len(wd) > 24:
-        lines.append(cur)
-        cur = wd
-      else:
-        cur = (cur + ' ' + wd).strip()
-    lines.append(cur)
-    for li, ln in enumerate(lines[:3]):
-      b.append(text(x + 77, 110 + li * 14, ln, 10.5, fill='#444'))
-    if x < 700:
-      b.append(f'<path d="M{x + 157},100 L{x + 168},100" stroke="#666" stroke-width="2" marker-end="url(#a)"/>')
-  b.insert(0, '<defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">'
-              '<path d="M0,0 L8,4 L0,8 z" fill="#666"/></marker></defs>')
-  bottom = [
-      (20, 270, 'Hessian-diagonal loop', ['fori_loop(..., unroll=2): same', 'accumulation order val + h(0) + h(1)',
-                                           '+ ...; two independent HVPs per', 'loop trip for XLA to schedule'], True),
-      (320, 270, 'all other solves', ['e.g. KFAC factor inverses and', 'unbatched / non-square systems:',
-                                      'original cuBLAS lowering,', 'unchanged'], False),
-      (620, 340, 'f32, left side, batched, 9 &lt;= n = m &lt;= 64', [
-          'Pallas/Triton kernel reproducing cuBLAS trsmBatched', 'bit for bit: 8-row blocks, block partial sums,',
-          'in-block FMA chain, IEEE division (inline PTX);', 'column-major I/O, so neighbouring XLA fusions',
-          'compile exactly as with cuBLAS'], True)]
-  for x, bw, t, lines, star in bottom:
-    b.append(f'<rect x="{x}" y="185" width="{bw}" height="125" rx="8" fill="{"#FFF3C4" if star else "#F2F2F2"}" '
-             f'stroke="#999"/>')
-    b.append(text(x + bw / 2, 207, t, 12, weight='bold'))
-    for i, ln in enumerate(lines):
-      b.append(text(x + bw / 2, 227 + i * 16, ln, 11, fill='#333'))
-  b.append('<path d="M437,142 L200,182" stroke="#666" stroke-width="2" marker-end="url(#a)"/>')
-  b.append('<path d="M777,142 L790,182" stroke="#666" stroke-width="2" marker-end="url(#a)"/>')
-  b.append('<path d="M777,142 L470,182" stroke="#666" stroke-width="2" marker-end="url(#a)"/>')
-  return svg(w, h, ''.join(b))
+  fig = plt.figure(figsize=(14, 6.2), facecolor='white')
+  fig.text(.05, .91, 'Where Faster-FermiNet changes the computation', color=RED, size=22, weight='bold')
+  fig.text(.05, .845, 'Highlighted: changed. Everything else lowers exactly as in the original.', color=MUTED, size=13)
+  top = [('KFAC training step', 'loss, gradient, curvature', False),
+         ('Local energy', 'linearize(∇ log|ψ|)', False),
+         ('Hessian-diagonal loop', 'fori_loop over 3N, unroll=2', True),
+         ('slogdet JVP / transpose', 'custom_linear_solve → lu_solve', False),
+         ('triangular_solve_p', 'CUDA lowering rule', True)]
+  w, gap, y0 = .172, .018, .55
+  for i, (t, s, ch) in enumerate(top):
+    x = .05 + i * (w + gap)
+    fig.patches.append(FancyBboxPatch((x, y0), w, .2, boxstyle='round,pad=0.006', transform=fig.transFigure,
+                                      facecolor='#f3dede' if ch else LIGHT, edgecolor=RED if ch else 'none', lw=1.5))
+    fig.text(x + w / 2, y0 + .125, t, ha='center', size=12.5, weight='bold', color=RED if ch else INK)
+    fig.text(x + w / 2, y0 + .06, s, ha='center', size=10.5, color=MUTED)
+    if i < len(top) - 1:
+      fig.text(x + w + gap / 2, y0 + .09, '→', ha='center', size=16, color=MUTED)
+  bottom = [(.05, .37, 'Loop unroll ×2', ['same accumulation order val + h(0) + h(1) + …;',
+                                          'two independent HVPs per loop trip'], True),
+            (.44, .25, 'All other solves', ['e.g. KFAC factor inverses:', 'original cuBLAS lowering'], False),
+            (.71, .24, 'f32, batched, 9 ≤ n = m ≤ 64', ['Pallas/Triton kernel = cuBLAS bits;',
+                                                         'column-major I/O, inline PTX rounding'], True)]
+  for x, w, t, lines, ch in bottom:
+    fig.patches.append(FancyBboxPatch((x, .1), w, .27, boxstyle='round,pad=0.006', transform=fig.transFigure,
+                                      facecolor='#f3dede' if ch else LIGHT, edgecolor=RED if ch else 'none', lw=1.5))
+    fig.text(x + .015, .3, t, size=13, weight='bold', color=RED if ch else INK)
+    for k, ln in enumerate(lines):
+      fig.text(x + .015, .22 - k * .055, ln, size=11, color=INK)
+  fig.savefig(DOCS / 'change-views' / 'module-map.svg', facecolor='white')
+  plt.close(fig)
 
 
 def main():
-  with open(os.path.join(DOCS, 'validation', 'h20.json')) as f:
-    h20 = json.load(f)
-  with open(os.path.join(DOCS, 'validation', 'attempts.json')) as f:
-    att = json.load(f)
-  os.makedirs(os.path.join(DOCS, 'performance-views'), exist_ok=True)
-  os.makedirs(os.path.join(DOCS, 'change-views'), exist_ok=True)
-  with open(os.path.join(DOCS, 'performance-views', 'benchmark.svg'), 'w') as f:
-    f.write(benchmark(h20))
-  with open(os.path.join(DOCS, 'performance-views', 'history.svg'), 'w') as f:
-    f.write(history(att, h20))
-  with open(os.path.join(DOCS, 'change-views', 'module-map.svg'), 'w') as f:
-    f.write(module_map())
+  h20, att = load()
+  benchmark(h20)
+  history(h20, att)
+  module_map()
   print('figures written')
 
 
